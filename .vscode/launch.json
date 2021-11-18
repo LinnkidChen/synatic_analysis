@@ -8,9 +8,9 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug",
-            "program": "${workspaceFolder}/Recursive/run",
+            "program": "${workspaceFolder}/LL1/run",
             "args": [],
-            "cwd": "${workspaceFolder}/Recursive",
+            "cwd": "${workspaceFolder}/LL1",
             "preLaunchTask": "build"
         }
     ]
