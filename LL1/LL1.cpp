@@ -21,7 +21,8 @@ struct prod { // production
 };
 
 map<string, int> syb_map;
-set<int> Non_Term;
+set<int> non_term;
+set<int> term;
 syb start_syb;
 vector<prod> ans_path;
 int map_syb_fun(string ch) {
@@ -61,16 +62,18 @@ void read_grammar(ifstream &fin, vector<prod> &grammar) {
     grammar.push_back(temp_p);
   }
   for (auto it = grammar.begin(); it != grammar.end(); it++) {
-    Non_Term.insert(it->left.ch);
+    non_term.insert(it->left.ch);
   }
   for (auto it = grammar.begin(); it != grammar.end(); it++) {
     it->left.type = NON_TERM;
     for (auto it_ = it->right.begin(); it_ != it->right.end(); it_++) {
-      if (Non_Term.find(it_->ch) != Non_Term.end()) { // is a non_terminal
+      if (non_term.find(it_->ch) != non_term.end()) { // is a non_terminal
                                                       // symbol
         it_->type = NON_TERM;
-      } else
+      } else {
         it_->type = TERM;
+        term.insert(it_->ch);
+      }
     }
   }
   start_syb = grammar[0].left;
@@ -90,6 +93,7 @@ void rmv_left_rec(vector<prod> &grammar) {
       new_non_prd = left + '\'';
       new_nonp_syb.ch = map_syb_fun(new_non_prd);
       new_nonp_syb.type = NON_TERM;
+      non_term.insert(new_nonp_syb.ch);
 
       for (auto it_ = grammar.begin();
            it_ != grammar.end();) {               // for every prod in grammar
@@ -133,56 +137,6 @@ void print_grammar(ofstream &fout, vector<prod> const &grammar) {
     fout << endl;
   }
 }
-int recur_ana(ofstream &fout, string input, vector<syb> cur,
-              vector<prod> &grammar, vector<prod> path) {
-  auto it = cur.begin();
-  vector<syb> temp;
-  vector<prod> temp_p;
-  if (cur.size() > input.length() * 2)
-    return 0;
-  int succeed = 0;
-  int flag = 0; // if cur is all terminate symbols
-  int q = 0;
-  for (int i = 0; it != cur.end(); i++) {
-    if (it->type == NON_TERM) {
-      flag++;
-      for (auto it_ = grammar.begin(); it_ != grammar.end(); it_++) {
-
-        if (it_->left.ch == it->ch) {
-          temp_p = path;
-          temp_p.push_back(*it_);
-          temp = cur;
-          auto _it = temp.begin() + i;
-          temp.erase(_it);
-          temp.insert(_it, it_->right.begin(), it_->right.end());
-          succeed = recur_ana(fout, input, temp, grammar, temp_p);
-
-          if (succeed > 0) {
-            return 1;
-          }
-        }
-      }
-    } else {
-      if (map_syb_fun(it->ch) != string(1, input[q]))
-        return 0;
-      else
-        q++;
-    }
-    it++;
-  }
-  if (flag == 0) {
-    string temp_str;
-    temp_str = "";
-    for (auto it = cur.begin(); it != cur.end(); it++) {
-      temp_str += map_syb_fun(it->ch);
-    }
-    if (temp_str == input) {
-      ans_path = path;
-      return 1;
-    }
-  }
-  return 0;
-}
 
 int main() {
 
@@ -207,8 +161,10 @@ int main() {
   input = "1+1+2+3+3+1+2";
   vector<syb> cur;
 
+  // gen_first
+  // gen_follow
+  // gen pridict_table
   cur.push_back(start_syb);
-  recur_ana(fout, input, cur, grammar, path);
   print_grammar(fout, ans_path);
   return 0;
 }

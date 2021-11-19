@@ -22,6 +22,7 @@ struct prod { // production
 
 map<string, int> syb_map;
 set<int> Non_Term;
+set<int> Term;
 syb start_syb;
 vector<prod> ans_path;
 int map_syb_fun(string ch) {
@@ -90,6 +91,7 @@ void rmv_left_rec(vector<prod> &grammar) {
       new_non_prd = left + '\'';
       new_nonp_syb.ch = map_syb_fun(new_non_prd);
       new_nonp_syb.type = NON_TERM;
+      Non_Term.insert(new_nonp_syb.ch);
 
       for (auto it_ = grammar.begin();
            it_ != grammar.end();) {               // for every prod in grammar
@@ -198,7 +200,7 @@ int main() {
   vector<prod> grammar;
   vector<prod> path;
   string input;
-
+  int succeed;
   read_grammar(fin, grammar);
   rmv_left_rec(grammar);
 
@@ -208,7 +210,10 @@ int main() {
   vector<syb> cur;
 
   cur.push_back(start_syb);
-  recur_ana(fout, input, cur, grammar, path);
-  print_grammar(fout, ans_path);
+  succeed = recur_ana(fout, input, cur, grammar, path);
+  if (succeed) {
+    print_grammar(fout, ans_path);
+  } else
+    cout << "Invalid input" << endl;
   return 0;
 }
