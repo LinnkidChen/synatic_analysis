@@ -9,10 +9,18 @@
 #define NON_TERM 2
 using namespace std;
 
-struct syb // symbol
+class syb // symbol
 {
+public:
   int ch;
-  int type; // either Term or non_term. Term stands for terminal.
+  int type;
+  syb(int ch_ = 0, int type_ = 0) {
+    ch = ch_;
+    type = type_;
+  }
+  bool operator<(const syb &obj) const { return ch < obj.ch; }
+
+  // either Term or non_term. Term stands for terminal.
 };
 
 struct prod { // production
@@ -23,8 +31,12 @@ struct prod { // production
 map<string, int> syb_map;
 set<int> non_term;
 set<int> term;
+// vector<f_set> first;
+map<int, set<syb>> follow;
+map<int, set<syb>> first;
 syb start_syb;
 vector<prod> ans_path;
+int empty_ch;
 int map_syb_fun(string ch) {
 
   if (syb_map.find(ch) == syb_map.end()) // not find
@@ -77,7 +89,7 @@ void read_grammar(ifstream &fin, vector<prod> &grammar) {
     }
   }
   start_syb = grammar[0].left;
-  map_syb_fun("");
+  empty_ch = map_syb_fun("");
 }
 void rmv_left_rec(vector<prod> &grammar) {
   vector<prod> temp_gmr;
@@ -121,6 +133,7 @@ void rmv_left_rec(vector<prod> &grammar) {
       temp_p.left = new_nonp_syb;
       temp_s.type = TERM;
       temp_s.ch = map_syb_fun("");
+      temp_p.right.push_back(temp_s);
       temp_gmr.push_back(temp_p);
     }
   }
@@ -128,6 +141,7 @@ void rmv_left_rec(vector<prod> &grammar) {
     grammar.push_back(*it_);
   }
 }
+
 void print_grammar(ofstream &fout, vector<prod> const &grammar) {
   for (auto it = grammar.begin(); it != grammar.end(); it++) {
     fout << map_syb_fun(it->left.ch) << "->";
@@ -136,6 +150,53 @@ void print_grammar(ofstream &fout, vector<prod> const &grammar) {
     }
     fout << endl;
   }
+}
+int first_procs_non_term(int i, prod const &prdtn) {
+  int flag_empty = 0;
+  int succeed = 0;
+  syb temp = prdtn.right[i];
+  for (auto it = first[temp.ch].begin(); it != first[temp.ch].end(); it++) {
+    if (it->ch != empty_ch) { // not null
+      if (first[prdtn.left.ch].insert(*it).second)
+        succeed++;
+    } else
+      flag_empty++;
+  }
+  if (flag_empty) {
+    if (i < prdtn.right.size())
+      first_procs_non_term(i + 1, prdtn);
+    else
+      first[prdtn.left.ch].insert(syb(empty_ch, TERM));
+  }
+  return succeed;
+}
+
+void gen_first(vector<prod> const &grammar) {
+  set<syb> temp_syb;
+  for (auto it = non_term.begin(); it != non_term.end(); it++) {
+
+    first[*it];
+  } // initial set
+
+  int change_flag = 1;
+  while (change_flag) {
+    change_flag = 0;
+    for (auto it = grammar.begin(); it != grammar.end(); it++) {
+      if (term.find(it->right[0].ch) != term.end() ||
+          it->right[0].ch == empty_ch) {
+
+        if (first[it->left.ch].insert(it->right[0]).second) // insert success
+        {
+          change_flag++;
+        }
+      } else
+        change_flag += first_procs_non_term(0, *it);
+    }
+  }
+}
+
+void gen_follow(vector<prod> const &grammar) {
+  follow[start_syb.ch].insert(map_syb_fun("$"));
 }
 
 int main() {
@@ -161,10 +222,11 @@ int main() {
   input = "1+1+2+3+3+1+2";
   vector<syb> cur;
 
-  // gen_first
-  // gen_follow
+  gen_first(grammar);
+  gen_follow(grammar);
   // gen pridict_table
+
   cur.push_back(start_syb);
-  print_grammar(fout, ans_path);
+  print_grammar(fout, grammar);
   return 0;
 }
