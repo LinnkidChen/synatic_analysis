@@ -197,6 +197,48 @@ void gen_first(vector<prod> const &grammar) {
 
 void gen_follow(vector<prod> const &grammar) {
   follow[start_syb.ch].insert(map_syb_fun("$"));
+  int change_flag = 1;
+  while (change_flag) {
+    change_flag = 0;
+    for (auto it = grammar.begin(); it != grammar.end(); it++) {
+      for (auto it_ = it->right.begin(); it_ != it->right.end(); it_++) {
+        if (it_->type == NON_TERM) {
+          if (it_ + 1 == it->right.end()) { // A->aB
+            for (auto it__ = follow[it->left.ch].begin();
+                 it__ != follow[it->left.ch].end(); it__++) {
+              if (follow[it_->ch].insert(it__->ch).second) {
+                change_flag++;
+              }
+            }
+          } else if ((it_ + 1)->type == NON_TERM) { // A->aBb
+                                                    // A->aBb,empty in first(b)
+            if (first[(it_ + 1)->ch].find(empty_ch) !=
+                first[(it_ + 1)->ch].end()) {
+              for (auto it__ = follow[it->left.ch].begin();
+                   it__ != follow[it->left.ch].end(); it__++) {
+                if (follow[it_->ch].insert(it__->ch).second) {
+                  change_flag++;
+                }
+              }
+            }
+            // A->aBb, adding first b to follow B
+            for (auto it__ = first[(it_ + 1)->ch].begin();
+                 it__ != first[(it_ + 1)->ch].end(); it__++) {
+              if (it__->ch != empty_ch)
+                if (follow[it_->ch].insert(it__->ch).second) {
+                  change_flag++;
+                }
+            }
+          } else {
+
+            if (follow[it_->ch].insert((it_ + 1)->ch).second) {
+              change_flag++;
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 int main() {
