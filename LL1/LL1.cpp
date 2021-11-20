@@ -294,6 +294,50 @@ void print_predict(ofstream &fout) {
   }
 }
 
+void ll1_analysis(vector<prod> const &grammar, string input) {
+  vector<syb> stack;
+  stack.push_back(syb(map_syb_fun("$"), TERM));
+  stack.push_back(start_syb);
+  input = input + "$";
+  auto stack_it = stack.rbegin();
+  auto input_it = input.begin();
+  prod predt;
+
+  while (stack_it->ch != map_syb_fun("$") && stack.size() > 0)
+
+  {
+
+    if (non_term.find(stack_it->ch) != non_term.end()) { // X is non_term
+      if (predict.find(
+              make_pair(stack_it->ch, map_syb_fun(string(1, *input_it)))) !=
+          predict.end()) { //[A,a] is not empty
+        predt =
+            *predict[make_pair(stack_it->ch, map_syb_fun(string(1, *input_it)))]
+                 .begin();
+        stack.pop_back();
+        for (auto it = predt.right.rbegin(); it != predt.right.rend(); it++) {
+          if (it->ch != empty_ch)
+            stack.push_back(*it);
+        }
+        ans_path.push_back(predt);
+      } else {
+        cout << "Invalid input" << endl;
+        exit(0);
+      }
+
+    } else { // X is term or $
+      if (map_syb_fun((stack.end() - 1)->ch) == string(1, *input_it)) {
+        stack.pop_back();
+        input_it++;
+      } else {
+        cout << "Invalid input" << endl;
+        exit(0);
+      }
+    }
+    stack_it = stack.rbegin();
+  }
+}
+
 int main() {
 
   ifstream fin;
@@ -314,15 +358,16 @@ int main() {
 
   cout << "please enter the string" << endl;
   // cin >> input;
-  input = "1+1+2+3+3+1+2";
+  input = "1+1";
   vector<syb> cur;
 
   gen_first(grammar);
   gen_follow(grammar);
   gen_predict_table(grammar);
-  print_predict(fout);
+  // print_predict(fout);
 
+  ll1_analysis(grammar, input);
   cur.push_back(start_syb);
-  //   print_grammar(fout, grammar);
+  print_grammar(fout, ans_path);
   return 0;
 }

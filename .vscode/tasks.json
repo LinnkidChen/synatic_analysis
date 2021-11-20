@@ -6,7 +6,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "cd LL1 && g++ -g -std=c++11 LL1.cpp -o run"
+            "command": "cd LR1 && g++ -g -std=c++11 LR1.cpp -o run"
         }
     ]
 }
