@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 #define TERM 1
 #define NON_TERM 2
@@ -23,9 +24,11 @@ public:
   // either Term or non_term. Term stands for terminal.
 };
 
-struct prod { // production
+class prod { // production
+public:
   syb left;
   vector<syb> right;
+  bool operator<(const prod &obj) const { return left.ch < obj.left.ch; }
 };
 
 map<string, int> syb_map;
@@ -34,6 +37,7 @@ set<int> term;
 // vector<f_set> first;
 map<int, set<syb>> follow;
 map<int, set<syb>> first;
+map<pair<int, int>, set<prod>> predict;
 syb start_syb;
 vector<prod> ans_path;
 int empty_ch;
@@ -91,6 +95,7 @@ void read_grammar(ifstream &fin, vector<prod> &grammar) {
   start_syb = grammar[0].left;
   empty_ch = map_syb_fun("");
 }
+
 void rmv_left_rec(vector<prod> &grammar) {
   vector<prod> temp_gmr;
   for (auto it = grammar.begin(); it != grammar.end(); it++) {
@@ -141,7 +146,12 @@ void rmv_left_rec(vector<prod> &grammar) {
     grammar.push_back(*it_);
   }
 }
-
+void print_prod(ofstream &fout, prod const &prod_) {
+  cout << map_syb_fun(prod_.left.ch) << "->";
+  for (const auto &right : prod_.right) {
+    cout << map_syb_fun(right.ch);
+  }
+}
 void print_grammar(ofstream &fout, vector<prod> const &grammar) {
   for (auto it = grammar.begin(); it != grammar.end(); it++) {
     fout << map_syb_fun(it->left.ch) << "->";
@@ -241,6 +251,49 @@ void gen_follow(vector<prod> const &grammar) {
   }
 }
 
+void gen_predict_table(vector<prod> const &grammar) {
+  for (auto gen_it = grammar.begin(); gen_it != grammar.end();
+       gen_it++) { // for every production
+    if (non_term.find(gen_it->right[0].ch) != non_term.end()) {
+      for (auto fir_it = first[gen_it->right[0].ch].begin();
+           fir_it != first[gen_it->right[0].ch].end(); fir_it++) {
+        if (fir_it->ch == empty_ch) {
+          for (const auto &prd : follow[gen_it->left.ch]) {
+            predict[make_pair(gen_it->left.ch, prd.ch)].insert(*gen_it);
+          }
+        } else { // add A->B for every first(B) which is not empty
+          predict[make_pair(gen_it->left.ch, fir_it->ch)].insert(*gen_it);
+        }
+      }
+    } else if (gen_it->right[0].ch == empty_ch) {
+      for (const auto &prd : follow[gen_it->left.ch]) {
+        predict[make_pair(gen_it->left.ch, prd.ch)].insert(*gen_it);
+      }
+    } else {
+      predict[make_pair(gen_it->left.ch, gen_it->right[0].ch)].insert(*gen_it);
+    }
+  }
+}
+void print_predict(ofstream &fout) {
+  for (const auto &tem : term) {
+    for (const auto &nontem : non_term) {
+      if (predict.find(make_pair(nontem, tem)) != predict.end()) {
+        cout << "[" << map_syb_fun(nontem) << "," << map_syb_fun(tem) << "] :";
+        print_prod(fout, *(predict[make_pair(nontem, tem)].begin()));
+        cout << endl;
+      }
+    }
+  }
+  int $_ch = map_syb_fun("$");
+  for (const auto &nontem : non_term) {
+    if (predict.find(make_pair(nontem, $_ch)) != predict.end()) {
+      cout << "[" << map_syb_fun(nontem) << "," << map_syb_fun($_ch) << "] :";
+      print_prod(fout, *(predict[make_pair(nontem, $_ch)].begin()));
+      cout << endl;
+    }
+  }
+}
+
 int main() {
 
   ifstream fin;
@@ -266,9 +319,10 @@ int main() {
 
   gen_first(grammar);
   gen_follow(grammar);
-  // gen pridict_table
+  gen_predict_table(grammar);
+  print_predict(fout);
 
   cur.push_back(start_syb);
-  print_grammar(fout, grammar);
+  //   print_grammar(fout, grammar);
   return 0;
 }
