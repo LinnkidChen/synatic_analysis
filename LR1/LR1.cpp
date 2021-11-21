@@ -194,28 +194,62 @@ void print_lr_table() {
     cout << endl;
   }
 }
-void LR_analysis(string input) {
+void LR_analysis(string input, vector<prod> &grammar) {
   input = input + "$";
+  string inpt_with_num;
+  inpt_with_num = input;
   vector<int> stack_syb;
-  vector<int> state_syb;
+  vector<int> stack_sta;
   stack_syb.push_back(map_syb_fun("$"));
-  state_syb.push_back(0);
+  stack_sta.push_back(0);
   auto inpt_it = input.begin();
   auto syb_it = stack_syb.rbegin();
-  auto sta_it = state_syb.rbegin();
+  auto sta_it = stack_sta.rbegin();
+  auto inpt_with_num_it = inpt_with_num.begin();
+  prod temp_prd;
+
+  for (auto it = input.begin(); it != input.end(); it++) {
+    if (isdigit(*it)) {
+      *it = 'n';
+    }
+  }
 
   while (1) {
     syb_it = stack_syb.rbegin();
-    sta_it = state_syb.rbegin();
+    sta_it = stack_sta.rbegin();
     if (action_tb[make_pair(*sta_it, map_syb_fun(string(1, *inpt_it)))].type ==
         S) {
       stack_syb.push_back(map_syb_fun(string(1, *inpt_it)));
-      state_syb.push_back(
+      stack_sta.push_back(
           action_tb[make_pair(*sta_it, map_syb_fun(string(1, *inpt_it)))]
               .state);
       inpt_it++;
+      inpt_with_num_it++;
     } else if (action_tb[make_pair(*sta_it, map_syb_fun(string(1, *inpt_it)))]
                    .type == R) {
+      temp_prd = grammar[action_tb[make_pair(*sta_it,
+                                             map_syb_fun(string(1, *inpt_it)))]
+                             .state -
+                         1];
+      if (temp_prd.right[0].ch == map_syb_fun("n")) {
+        temp_prd.right[0].ch = map_syb_fun(string(1, *(inpt_with_num_it - 1)));
+      }
+      for (int i = 0; i < temp_prd.right.size(); i++) {
+        stack_syb.pop_back();
+        stack_sta.pop_back();
+      }
+      sta_it = stack_sta.rbegin();
+      stack_syb.push_back(temp_prd.left.ch);
+      stack_sta.push_back(goto_tb[make_pair(*sta_it, temp_prd.left.ch)].state);
+
+      ans_path.push_back(temp_prd);
+    } else if (action_tb[make_pair(*sta_it, map_syb_fun(string(1, *inpt_it)))]
+                   .type == ACC) {
+      cout << "analysis success" << endl;
+      break;
+    } else {
+      cout << "invalid input" << endl;
+      exit(0);
     }
   }
 }
@@ -233,13 +267,14 @@ int main() {
   vector<prod> grammar;
   vector<prod> path;
   string input;
-
+  input = "(4+5)*1-6/3";
   read_grammar(fin, grammar);
   read_lr_table();
   print_lr_table();
+  LR_analysis(input, grammar);
+  print_grammar(fout, ans_path);
   // cout << "please enter the string" << endl;
   // cin >> input;
-  input = "1+1";
 
   return 0;
 }

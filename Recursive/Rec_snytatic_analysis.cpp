@@ -140,8 +140,8 @@ int recur_ana(ofstream &fout, string input, vector<syb> cur,
   auto it = cur.begin();
   vector<syb> temp;
   vector<prod> temp_p;
-  if (cur.size() > input.length() * 2)
-    return 0;
+  //   if (cur.size() > input.length() * 2)
+  //     return 0;
   int succeed = 0;
   int flag = 0; // if cur is all terminate symbols
   int q = 0;
@@ -203,10 +203,10 @@ int main() {
   int succeed;
   read_grammar(fin, grammar);
   rmv_left_rec(grammar);
-
+  print_grammar(fout, grammar);
   cout << "please enter the string" << endl;
-  // cin >> input;
-  input = "1+1+2+3+3+1+2";
+  cin >> input;
+
   vector<syb> cur;
 
   cur.push_back(start_syb);

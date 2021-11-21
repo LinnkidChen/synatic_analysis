@@ -357,14 +357,14 @@ int main() {
   rmv_left_rec(grammar);
 
   cout << "please enter the string" << endl;
-  // cin >> input;
-  input = "1+1";
+  cin >> input;
   vector<syb> cur;
 
   gen_first(grammar);
   gen_follow(grammar);
   gen_predict_table(grammar);
-  // print_predict(fout);
+  print_predict(fout);
+  cout << endl;
 
   ll1_analysis(grammar, input);
   cur.push_back(start_syb);
